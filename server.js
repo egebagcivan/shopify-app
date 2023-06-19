@@ -6,6 +6,9 @@ const { default: createShopifyAuth } = require('@shopify/koa-shopify-auth');
 const { verifyRequest } = require('@shopify/koa-shopify-auth');
 const session = require('koa-session');
 
+const Router = require('@koa/router');
+const axios = require('axios');
+
 dotenv.config();
 
 const port = parseInt(process.env.PORT, 10) || 3000;
@@ -15,6 +18,7 @@ const handle = app.getRequestHandler();
 const { SHOPIFY_API_SECRET_KEY, SHOPIFY_API_KEY } = process.env;
 app.prepare().then(() => {
   const server = new Koa();
+  const router = new Router();
   server.use(session({ secure: true, sameSite: 'none' }, server));
   server.keys = [SHOPIFY_API_SECRET_KEY];
 
@@ -25,11 +29,31 @@ app.prepare().then(() => {
       scopes: ['read_products'],
       async afterAuth(ctx) {
         const { shop, accessToken } = ctx.session;
-        ctx.redirect('/');
+        ctx.redirect('https://' + shop + '/admin/apps');
       },
     }),
   );
   server.use(verifyRequest());
+
+  router.get('/getProducts', verifyRequest(), async (ctx, res) => {
+    const { shop, accessToken } = ctx.session;
+    const url = `https://${shop}/admin/api/2020-10/products.json`;
+
+    const shopifyHeader = (token) => ({
+      'X-Shopify-Access-Token': token,
+      'Content-Type': 'application/json'
+    });
+
+    const getProducts = await axios.get(url, {
+      headers: shopifyHeader(accessToken)
+    });
+    ctx.body = getProducts.data;
+    ctx.res.statusCode = 200;
+  })
+
+  server.use(router.routes());
+  server.use(router.allowedMethods());
+
   server.use(async (ctx) => {
     await handle(ctx.req, ctx.res);
     ctx.respond = false;

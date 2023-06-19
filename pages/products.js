@@ -2,6 +2,12 @@ import { Card, Layout, Page } from '@shopify/polaris';
 import React from 'react';
 
 class Products extends React.Component {
+  componentDidMount() {
+    fetch('/getProducts')
+      .then((response) => response.json())
+      .then((data) => console.log(data));
+  }
+
   render() {
     return (
       <Page>
