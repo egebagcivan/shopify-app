@@ -96,9 +96,24 @@ app.prepare().then(() => {
       },
     })
 
-    await axios.post(url, scriptTagBody, {
-      headers: shopifyHeader(accessToken)
-    }).then(response => console.log(response)).catch(error => console.log(error));
+    let scriptTagExists = false;
+
+    const getScriptTags = await axios.get(url, { headers: shopifyHeader(accessToken) });
+    console.log(getScriptTags.data);
+    getScriptTags.data.script_tags.map((script) => {
+      //console.log(script);
+      if (script.src === src) {
+        console.log("Script Tag already exists");
+        scriptTagExists = true;
+      }
+    });
+
+    if (!scriptTagExists) {
+      await axios.post(url, scriptTagBody, {
+        headers: shopifyHeader(accessToken)
+      }).then(response => console.log(response)).catch(error => console.log(error));
+    }
+
     ctx.res.statusCode = 200;
   })
 
