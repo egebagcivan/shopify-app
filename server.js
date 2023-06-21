@@ -26,7 +26,7 @@ app.prepare().then(() => {
     createShopifyAuth({
       apiKey: SHOPIFY_API_KEY,
       secret: SHOPIFY_API_SECRET_KEY,
-      scopes: ['read_products', 'write_products'],
+      scopes: ['read_products', 'write_products', 'read_script_tags', 'write_script_tags'],
       async afterAuth(ctx) {
         const { shop, accessToken } = ctx.session;
         ctx.redirect('https://' + shop + '/admin/apps');
@@ -34,6 +34,10 @@ app.prepare().then(() => {
     }),
   );
   server.use(verifyRequest());
+
+  //****************** */
+  // GET PRODUCTS ROUTE
+  //****************** */
 
   router.get('/getProducts', verifyRequest(), async (ctx, res) => {
     const { shop, accessToken } = ctx.session;
@@ -51,6 +55,10 @@ app.prepare().then(() => {
     ctx.res.statusCode = 200;
   })
 
+  //****************** */
+  // DELETE PRODUCT ROUTE
+  //****************** */
+
   router.get('/deleteProduct', verifyRequest(), async (ctx, res) => {
     const { shop, accessToken } = ctx.session;
     const productId = ctx.query.id;
@@ -62,6 +70,33 @@ app.prepare().then(() => {
     })
 
     const getProducts = await axios.delete(url, {
+      headers: shopifyHeader(accessToken)
+    }).then(response => console.log(response)).catch(error => console.log(error));
+    ctx.res.statusCode = 200;
+  })
+
+  //****************** */
+  // CREATE SCRIPT TAG ROUTE
+  //****************** */
+
+  router.get('/installScriptTags', verifyRequest(), async (ctx, res) => {
+    const { shop, accessToken } = ctx.session;
+    const url = `https://${shop}/admin/api/2020-10/script_tags.json`;
+    const src = "https://example.com/example.js";
+
+    const shopifyHeader = (token) => ({
+      'X-Shopify-Access-Token': token,
+      'Content-Type': 'application/json'
+    })
+
+    const scriptTagBody = JSON.stringify({
+      script_tag: {
+        event: "onload",
+        src,
+      },
+    })
+
+    await axios.post(url, scriptTagBody, {
       headers: shopifyHeader(accessToken)
     }).then(response => console.log(response)).catch(error => console.log(error));
     ctx.res.statusCode = 200;
