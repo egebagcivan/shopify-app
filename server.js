@@ -117,6 +117,26 @@ app.prepare().then(() => {
     ctx.res.statusCode = 200;
   })
 
+  //****************** */
+  // DELETE SCRIPT TAG ROUTE
+  //****************** */
+
+  router.get('/uninstallScriptTag', verifyRequest(), async (ctx, res) => {
+    const { shop, accessToken } = ctx.session;
+    const scriptTagId = ctx.query.id;
+    const url = `https://${shop}/admin/api/2020-10/script_tags/${scriptTagId}.json`;
+
+    const shopifyHeader = (token) => ({
+      'X-Shopify-Access-Token': token,
+      'Content-Type': 'application/json'
+    })
+
+    await axios.delete(url, {
+      headers: shopifyHeader(accessToken)
+    }).then(response => console.log(response)).catch(error => console.log(error));
+    ctx.res.statusCode = 200;
+  })
+
   server.use(router.routes());
   server.use(router.allowedMethods());
 
